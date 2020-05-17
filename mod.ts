@@ -1,3 +1,5 @@
+// Copyright 2020 William E. Sorensen. All rights reserved. MIT license.
+
 export type ExperimentFunction<TParams extends any[], TResult> = (
   ...args: TParams
 ) => TResult;
