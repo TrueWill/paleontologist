@@ -1,5 +1,8 @@
 import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
-import { spy, Spy } from "https://raw.githubusercontent.com/udibo/mock/v0.3.0/spy.ts";
+import {
+  spy,
+  Spy,
+} from "https://raw.githubusercontent.com/udibo/mock/v0.3.0/spy.ts";
 import * as scientist from "./mod.ts";
 
 function sum(a: number, b: number): number {
@@ -12,36 +15,36 @@ function sum2(a: number, b: number): number {
 
 Deno.test("should return result", () => {
   const experiment = scientist.experiment({
-    name: 'equivalent1',
+    name: "equivalent1",
     control: sum,
     candidate: sum2,
     options: {
-      publish: () => {}
-    }
+      publish: () => {},
+    },
   });
 
   const result: number = experiment(1, 2);
 
   assertEquals(result, 3);
-})
+});
 
-Deno.test('should publish results', () => {
+Deno.test("should publish results", () => {
   const publishMock: Spy<void> = spy();
 
   const experiment = scientist.experiment({
-    name: 'equivalent2',
+    name: "equivalent2",
     control: sum,
     candidate: sum2,
     options: {
-      publish: publishMock
-    }
+      publish: publishMock,
+    },
   });
 
   experiment(1, 2);
 
   assertEquals(publishMock.calls.length, 1);
   const results = publishMock.calls[0].args[0];
-  assertEquals(results.experimentName, 'equivalent2');
+  assertEquals(results.experimentName, "equivalent2");
   assertEquals(results.experimentArguments, [1, 2]);
   assertEquals(results.controlResult, 3);
   assertEquals(results.candidateResult, 3);

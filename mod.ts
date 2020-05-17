@@ -4,7 +4,7 @@ export type ExperimentFunction<TParams extends any[], TResult> = (
 
 export type ExperimentAsyncFunction<
   TParams extends any[],
-  TResult
+  TResult,
 > = ExperimentFunction<TParams, Promise<TResult>>;
 
 export interface Results<TParams extends any[], TResult> {
@@ -24,7 +24,7 @@ export interface Options<TParams extends any[], TResult> {
 }
 
 function defaultPublish<TParams extends any[], TResult>(
-  results: Results<TParams, TResult>
+  results: Results<TParams, TResult>,
 ): void {
   if (
     results.candidateResult !== results.controlResult ||
@@ -36,7 +36,7 @@ function defaultPublish<TParams extends any[], TResult>(
 }
 
 const defaultOptions = {
-  publish: defaultPublish
+  publish: defaultPublish,
 };
 
 /**
@@ -52,7 +52,7 @@ export function experiment<TParams extends any[], TResult>({
   name,
   control,
   candidate,
-  options = defaultOptions
+  options = defaultOptions,
 }: {
   name: string;
   control: ExperimentFunction<TParams, TResult>;
@@ -80,7 +80,7 @@ export function experiment<TParams extends any[], TResult>({
           controlError,
           candidateError,
           controlTimeMs,
-          candidateTimeMs
+          candidateTimeMs,
         });
       }
     }
@@ -114,7 +114,7 @@ export function experiment<TParams extends any[], TResult>({
 
 async function executeAndTime<TParams extends any[], TResult>(
   controlOrCandidate: ExperimentAsyncFunction<TParams, TResult>,
-  args: TParams
+  args: TParams,
 ): Promise<[TResult, number]> {
   const startTime = performance.now();
   const result = await controlOrCandidate(...args);
@@ -136,7 +136,7 @@ export function experimentAsync<TParams extends any[], TResult>({
   name,
   control,
   candidate,
-  options = defaultOptions
+  options = defaultOptions,
 }: {
   name: string;
   control: ExperimentAsyncFunction<TParams, TResult>;
@@ -164,7 +164,7 @@ export function experimentAsync<TParams extends any[], TResult>({
           controlError,
           candidateError,
           controlTimeMs,
-          candidateTimeMs
+          candidateTimeMs,
         });
       }
     }
@@ -173,7 +173,7 @@ export function experimentAsync<TParams extends any[], TResult>({
       // Run in parallel
       [
         [candidateResult, candidateTimeMs],
-        [controlResult, controlTimeMs]
+        [controlResult, controlTimeMs],
       ] = await Promise.all([
         executeAndTime(candidate, args).catch((e) => {
           candidateError = e;
@@ -182,7 +182,7 @@ export function experimentAsync<TParams extends any[], TResult>({
         executeAndTime(control, args).catch((e) => {
           controlError = e;
           return [undefined, undefined];
-        })
+        }),
       ]);
     } else {
       controlResult = await control(...args).catch((e) => {
