@@ -11,15 +11,15 @@ This is a port of [Tzientist](https://github.com/TrueWill/tzientist).
 ## Getting started
 
 ```TypeScript
-import * as scientist from 'https://raw.githubusercontent.com/TrueWill/paleontologist/master/mod.ts';
+import * as scientist from "https://raw.githubusercontent.com/TrueWill/paleontologist/master/mod.ts";
 
 const experiment = scientist.experiment({
-  name: 'trial1',
-  control: (s: string) => 'Control ' + s,
-  candidate: (s: string) => 'not quite right ' + s
+  name: "trial1",
+  control: (s: string) => "Control " + s,
+  candidate: (s: string) => "not quite right " + s,
 });
 
-console.log(experiment('C'));
+console.log(experiment("C"));
 ```
 
 This uses the default options and prints:
@@ -43,19 +43,19 @@ The `experiment` runs both the `control` and the `candidate`, and it publishes t
 function publish(results: scientist.Results<[string], string>): void {
   if (results.candidateResult !== results.controlResult) {
     console.log(
-      `Experiment ${results.experimentName}: expected "${results.controlResult}" but got "${results.candidateResult}"`
+      `Experiment ${results.experimentName}: expected "${results.controlResult}" but got "${results.candidateResult}"`,
     );
   }
 }
 
 const experiment = scientist.experiment({
-  name: 'trial2',
-  control: (s: string) => 'Control ' + s,
-  candidate: (s: string) => 'not quite right ' + s,
-  options: { publish }
+  name: "trial2",
+  control: (s: string) => "Control " + s,
+  candidate: (s: string) => "not quite right " + s,
+  options: { publish },
 });
 
-console.log(experiment('C'));
+console.log(experiment("C"));
 ```
 
 This prints:
@@ -82,10 +82,10 @@ function enabled(_: string): boolean {
 }
 
 const experiment = scientist.experiment({
-  name: 'trial3',
-  control: (s: string) => 'Control ' + s,
-  candidate: (s: string) => 'not quite right ' + s,
-  options: { enabled }
+  name: "trial3",
+  control: (s: string) => "Control " + s,
+  candidate: (s: string) => "not quite right " + s,
+  options: { enabled },
 });
 ```
 
@@ -95,10 +95,10 @@ If your functions are async (returning a Promise), use `experimentAsync`. The re
 
 ```TypeScript
 const experiment = scientist.experimentAsync({
-  name: 'async trial1',
+  name: "async trial1",
   control: myAsyncControl,
   candidate: myAsyncCandidate,
-  options: { publish }
+  options: { publish },
 });
 
 const result: number = await experiment(1, 2);
