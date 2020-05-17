@@ -116,7 +116,7 @@ Published results include timings for both the control and the candidate. Timing
 
 ## FAQ
 
-Q. Why would I use this library?
+Q. Why would I use this module?
 
 A. You want to refactor or replace existing code, but that code is difficult or impossible to test with automated unit or integration tests. Perhaps it's nondeterministic. It might rely on data or on user input that is only available in a production environment. It could be a combinatorial explosion of states that requires too many test cases. Typically you would use this for high-risk changes, since you'll want to run the experiment for some time in production and check the results.
 
