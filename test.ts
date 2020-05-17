@@ -1,4 +1,8 @@
-import { assert, assertEquals } from "https://deno.land/std/testing/asserts.ts";
+import {
+  assert,
+  assertEquals,
+  assertThrows,
+} from "https://deno.land/std/testing/asserts.ts";
 import {
   spy,
   Spy,
@@ -107,163 +111,156 @@ Deno.test("when function results differ it should publish results", () => {
   assert(results.candidateTimeMs >= 0);
 });
 
+function ctrlSimple(): string {
+  return "Everything is under control";
+}
+
+function candiThrower(): string {
+  throw new Error("Candy I can't let you go");
+}
+
+Deno.test("when candidate throws it should return result of control", () => {
+  const experiment = scientist.experiment({
+    name: "throw1",
+    control: ctrlSimple,
+    candidate: candiThrower,
+    options: {
+      publish: () => {},
+    },
+  });
+
+  const result: string = experiment();
+
+  assertEquals(result, "Everything is under control");
+});
+
+Deno.test("when candidate throws it should publish results", () => {
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "throw2",
+    control: ctrlSimple,
+    candidate: candiThrower,
+    options: {
+      publish: publishMock,
+    },
+  });
+
+  experiment();
+
+  assertEquals(publishMock.calls.length, 1);
+  const results = publishMock.calls[0].args[0];
+  assertEquals(results.experimentName, "throw2");
+  assertEquals(results.experimentArguments, []);
+  assertEquals(results.controlResult, "Everything is under control");
+  assertEquals(results.candidateResult, undefined);
+  assertEquals(results.controlError, undefined);
+  assert(results.candidateError !== undefined);
+  assertEquals(results.candidateError.message, "Candy I can't let you go");
+  assert(results.controlTimeMs !== undefined);
+  assert(results.controlTimeMs >= 0);
+  assertEquals(results.candidateTimeMs, undefined);
+});
+
+function ctrlThrower(): string {
+  throw new Error("Kaos!");
+}
+
+function candiSimple(): string {
+  return "Kane";
+}
+
+Deno.test("when control throws it should throw", () => {
+  const experiment = scientist.experiment({
+    name: "cthrow1",
+    control: ctrlThrower,
+    candidate: candiSimple,
+    options: {
+      publish: () => {},
+    },
+  });
+
+  assertThrows(() => experiment(), Error, "Kaos!");
+});
+
+Deno.test("when control throws it should publish results", () => {
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "cthrow2",
+    control: ctrlThrower,
+    candidate: candiSimple,
+    options: {
+      publish: publishMock,
+    },
+  });
+
+  try {
+    experiment();
+  } catch {
+    // swallow error
+  }
+
+  assertEquals(publishMock.calls.length, 1);
+  const results = publishMock.calls[0].args[0];
+  assertEquals(results.experimentName, "cthrow2");
+  assertEquals(results.experimentArguments, []);
+  assertEquals(results.controlResult, undefined);
+  assertEquals(results.candidateResult, "Kane");
+  assert(results.controlError !== undefined);
+  assertEquals(results.controlError.message, "Kaos!");
+  assertEquals(results.candidateError, undefined);
+  assertEquals(results.controlTimeMs, undefined);
+  assert(results.candidateTimeMs !== undefined);
+  assert(results.candidateTimeMs >= 0);
+});
+
+Deno.test("when both throw it should throw control error", () => {
+  const experiment = scientist.experiment({
+    name: "bothrow1",
+    control: ctrlThrower,
+    candidate: candiThrower,
+    options: {
+      publish: () => {},
+    },
+  });
+
+  assertThrows(() => experiment(), Error, "Kaos!");
+});
+
+Deno.test("when both throw it should publish results", () => {
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "bothrow2",
+    control: ctrlThrower,
+    candidate: candiThrower,
+    options: {
+      publish: publishMock,
+    },
+  });
+
+  try {
+    experiment();
+  } catch {
+    // swallow error
+  }
+
+  assertEquals(publishMock.calls.length, 1);
+  const results = publishMock.calls[0].args[0];
+  assertEquals(results.experimentName, "bothrow2");
+  assertEquals(results.experimentArguments, []);
+  assertEquals(results.controlResult, undefined);
+  assertEquals(results.candidateResult, undefined);
+  assert(results.controlError !== undefined);
+  assertEquals(results.controlError.message, "Kaos!");
+  assert(results.candidateError !== undefined);
+  assertEquals(results.candidateError.message, "Candy I can't let you go");
+  assertEquals(results.controlTimeMs, undefined);
+  assertEquals(results.candidateTimeMs, undefined);
+});
 /*
-  describe('when candidate throws', () => {
-    function ctrl(): string {
-      return 'Everything is under control';
-    }
 
-    function candi(): string {
-      throw new Error("Candy I can't let you go");
-    }
-
-    it('should return result of control', () => {
-      const experiment = scientist.experiment({
-        name: 'throw1',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      const result: string = experiment();
-
-      expect(result).toBe('Everything is under control');
-    });
-
-    it('should publish results', () => {
-      const experiment = scientist.experiment({
-        name: 'throw2',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      experiment();
-
-      expect(publishMock.mock.calls.length).toBe(1);
-      const results = publishMock.mock.calls[0][0];
-      expect(results.experimentName).toBe('throw2');
-      expect(results.experimentArguments).toEqual([]);
-      expect(results.controlResult).toBe('Everything is under control');
-      expect(results.candidateResult).toBeUndefined();
-      expect(results.controlError).toBeUndefined();
-      expect(results.candidateError).toBeDefined();
-      expect(results.candidateError.message).toBe("Candy I can't let you go");
-      expect(results.controlTimeMs).toBeDefined();
-      expect(results.controlTimeMs).toBeGreaterThan(0);
-      expect(results.candidateTimeMs).toBeUndefined();
-    });
-  });
-
-  describe('when control throws', () => {
-    function ctrl(): string {
-      throw new Error('Kaos!');
-    }
-
-    function candi(): string {
-      return 'Kane';
-    }
-
-    it('should throw', () => {
-      const experiment = scientist.experiment({
-        name: 'cthrow1',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      expect(() => experiment()).toThrowError('Kaos!');
-    });
-
-    it('should publish results', () => {
-      const experiment = scientist.experiment({
-        name: 'cthrow2',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      try {
-        experiment();
-      } catch {
-        // swallow error
-      }
-
-      expect(publishMock.mock.calls.length).toBe(1);
-      const results = publishMock.mock.calls[0][0];
-      expect(results.experimentName).toBe('cthrow2');
-      expect(results.experimentArguments).toEqual([]);
-      expect(results.controlResult).toBeUndefined();
-      expect(results.candidateResult).toBe('Kane');
-      expect(results.controlError).toBeDefined();
-      expect(results.controlError.message).toBe('Kaos!');
-      expect(results.candidateError).toBeUndefined();
-      expect(results.controlTimeMs).toBeUndefined();
-      expect(results.candidateTimeMs).toBeDefined();
-      expect(results.candidateTimeMs).toBeGreaterThan(0);
-    });
-  });
-
-  describe('when both throw', () => {
-    function ctrl(): string {
-      throw new Error('Kaos!');
-    }
-
-    function candi(): string {
-      throw new Error("Candy I can't let you go");
-    }
-
-    it('should throw control error', () => {
-      const experiment = scientist.experiment({
-        name: 'bothrow1',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      expect(() => experiment()).toThrowError('Kaos!');
-    });
-
-    it('should publish results', () => {
-      const experiment = scientist.experiment({
-        name: 'bothrow2',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      try {
-        experiment();
-      } catch {
-        // swallow error
-      }
-
-      expect(publishMock.mock.calls.length).toBe(1);
-      const results = publishMock.mock.calls[0][0];
-      expect(results.experimentName).toBe('bothrow2');
-      expect(results.experimentArguments).toEqual([]);
-      expect(results.controlResult).toBeUndefined();
-      expect(results.candidateResult).toBeUndefined();
-      expect(results.controlError).toBeDefined();
-      expect(results.controlError.message).toBe('Kaos!');
-      expect(results.candidateError).toBeDefined();
-      expect(results.candidateError.message).toBe("Candy I can't let you go");
-      expect(results.controlTimeMs).toBeUndefined();
-      expect(results.candidateTimeMs).toBeUndefined();
-    });
-  });
 
   describe('when enabled option is specified', () => {
     const candidateMock: jest.Mock<string, [string]> = jest.fn<
