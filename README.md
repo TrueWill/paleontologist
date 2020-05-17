@@ -1,6 +1,6 @@
 # paleontologist
 
-A Scientist-like module for Deno, implemented in TypeScript.
+A Scientist-like module for [Deno](https://deno.land/), implemented in TypeScript.
 
 It permits comparing legacy and refactored code paths in production environments,
 verifying both functional and non-functional requirements.
