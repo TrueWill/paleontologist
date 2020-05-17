@@ -8,14 +8,10 @@ This is also known as the Parallel Run pattern.
 
 This is a port of [Tzientist](https://github.com/TrueWill/tzientist).
 
-## Installation
-
-// TODO - also update import examples
-
 ## Getting started
 
 ```TypeScript
-import * as scientist from 'paleontologist';
+import * as scientist from 'https://raw.githubusercontent.com/TrueWill/paleontologist/master/mod.ts';
 
 const experiment = scientist.experiment({
   name: 'trial1',
