@@ -23,13 +23,6 @@ export interface Options<TParams extends any[], TResult> {
   enabled?: (...args: TParams) => boolean;
 }
 
-function hrtimeToMs(hrtime: [number, number]): number {
-  const MS_PER_SEC = 1000;
-  const NS_PER_MS = 1e6;
-  const [seconds, nanoseconds] = hrtime;
-  return seconds * MS_PER_SEC + nanoseconds / NS_PER_MS;
-}
-
 function defaultPublish<TParams extends any[], TResult>(
   results: Results<TParams, TResult>
 ): void {
@@ -94,19 +87,20 @@ export function experiment<TParams extends any[], TResult>({
 
     if (isEnabled) {
       try {
-        // Not using bigint version of hrtime for Node 8 compatibility
-        const candidateStartTime = process.hrtime();
+        const candidateStartTime = performance.now();
         candidateResult = candidate(...args);
-        candidateTimeMs = hrtimeToMs(process.hrtime(candidateStartTime));
+        const candidateEndTime = performance.now();
+        candidateTimeMs = candidateEndTime - candidateStartTime;
       } catch (e) {
         candidateError = e;
       }
     }
 
     try {
-      const controlStartTime = process.hrtime();
+      const controlStartTime = performance.now();
       controlResult = control(...args);
-      controlTimeMs = hrtimeToMs(process.hrtime(controlStartTime));
+      const controlEndTime = performance.now();
+      controlTimeMs = controlEndTime - controlStartTime;
     } catch (e) {
       controlError = e;
       publishResults();
@@ -122,10 +116,10 @@ async function executeAndTime<TParams extends any[], TResult>(
   controlOrCandidate: ExperimentAsyncFunction<TParams, TResult>,
   args: TParams
 ): Promise<[TResult, number]> {
-  // Not using bigint version of hrtime for Node 8 compatibility
-  const startTime = process.hrtime();
+  const startTime = performance.now();
   const result = await controlOrCandidate(...args);
-  const timeMs = hrtimeToMs(process.hrtime(startTime));
+  const endTime = performance.now();
+  const timeMs = endTime - startTime;
   return [result, timeMs];
 }
 
