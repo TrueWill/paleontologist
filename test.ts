@@ -13,7 +13,7 @@ function sum2(a: number, b: number): number {
   return b + a;
 }
 
-Deno.test("should return result", () => {
+Deno.test("when functions are equivalent it should return result", () => {
   const experiment = scientist.experiment({
     name: "equivalent1",
     control: sum,
@@ -28,7 +28,7 @@ Deno.test("should return result", () => {
   assertEquals(result, 3);
 });
 
-Deno.test("should publish results", () => {
+Deno.test("when functions are equivalent it should publish results", () => {
   const publishMock: Spy<void> = spy();
 
   const experiment = scientist.experiment({
@@ -56,119 +56,58 @@ Deno.test("should publish results", () => {
   assert(results.candidateTimeMs >= 0);
 });
 
+function ctrl(s: string): string {
+  return `Ctrl+${s}`;
+}
+
+function candi(s: string): string {
+  return s;
+}
+
+Deno.test("when function results differ it should return result of control", () => {
+  const experiment = scientist.experiment({
+    name: "differ1",
+    control: ctrl,
+    candidate: candi,
+    options: {
+      publish: () => {},
+    },
+  });
+
+  const result: string = experiment("C");
+
+  assertEquals(result, "Ctrl+C");
+});
+
+Deno.test("when function results differ it should publish results", () => {
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "differ2",
+    control: ctrl,
+    candidate: candi,
+    options: {
+      publish: publishMock,
+    },
+  });
+
+  experiment("C");
+
+  assertEquals(publishMock.calls.length, 1);
+  const results = publishMock.calls[0].args[0];
+  assertEquals(results.experimentName, "differ2");
+  assertEquals(results.experimentArguments, ["C"]);
+  assertEquals(results.controlResult, "Ctrl+C");
+  assertEquals(results.candidateResult, "C");
+  assertEquals(results.controlError, undefined);
+  assertEquals(results.candidateError, undefined);
+  assert(results.controlTimeMs !== undefined);
+  assert(results.controlTimeMs >= 0);
+  assert(results.candidateTimeMs !== undefined);
+  assert(results.candidateTimeMs >= 0);
+});
+
 /*
-describe('experiment', () => {
-  const publishMock: jest.Mock<void, [scientist.Results<any[], any>]> = jest.fn<
-    void,
-    [scientist.Results<any[], any>]
-  >();
-
-  afterEach(() => {
-    publishMock.mockClear();
-  });
-
-  describe('when functions are equivalent', () => {
-    function sum(a: number, b: number): number {
-      return a + b;
-    }
-
-    function sum2(a: number, b: number): number {
-      return b + a;
-    }
-
-    it('should return result', () => {
-      const experiment = scientist.experiment({
-        name: 'equivalent1',
-        control: sum,
-        candidate: sum2,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      const result: number = experiment(1, 2);
-
-      expect(result).toBe(3);
-    });
-
-    it('should publish results', () => {
-      const experiment = scientist.experiment({
-        name: 'equivalent2',
-        control: sum,
-        candidate: sum2,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      experiment(1, 2);
-
-      expect(publishMock.mock.calls.length).toBe(1);
-      const results = publishMock.mock.calls[0][0];
-      expect(results.experimentName).toBe('equivalent2');
-      expect(results.experimentArguments).toEqual([1, 2]);
-      expect(results.controlResult).toBe(3);
-      expect(results.candidateResult).toBe(3);
-      expect(results.controlError).toBeUndefined();
-      expect(results.candidateError).toBeUndefined();
-      expect(results.controlTimeMs).toBeDefined();
-      expect(results.controlTimeMs).toBeGreaterThan(0);
-      expect(results.candidateTimeMs).toBeDefined();
-      expect(results.candidateTimeMs).toBeGreaterThan(0);
-    });
-  });
-
-  describe('when function results differ', () => {
-    function ctrl(s: string): string {
-      return `Ctrl+${s}`;
-    }
-
-    function candi(s: string): string {
-      return s;
-    }
-
-    it('should return result of control', () => {
-      const experiment = scientist.experiment({
-        name: 'differ1',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      const result: string = experiment('C');
-
-      expect(result).toBe('Ctrl+C');
-    });
-
-    it('should publish results', () => {
-      const experiment = scientist.experiment({
-        name: 'differ2',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      experiment('C');
-
-      expect(publishMock.mock.calls.length).toBe(1);
-      const results = publishMock.mock.calls[0][0];
-      expect(results.experimentName).toBe('differ2');
-      expect(results.experimentArguments).toEqual(['C']);
-      expect(results.controlResult).toBe('Ctrl+C');
-      expect(results.candidateResult).toBe('C');
-      expect(results.controlError).toBeUndefined();
-      expect(results.candidateError).toBeUndefined();
-      expect(results.controlTimeMs).toBeDefined();
-      expect(results.controlTimeMs).toBeGreaterThan(0);
-      expect(results.candidateTimeMs).toBeDefined();
-      expect(results.candidateTimeMs).toBeGreaterThan(0);
-    });
-  });
-
   describe('when candidate throws', () => {
     function ctrl(): string {
       return 'Everything is under control';
