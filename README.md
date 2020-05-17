@@ -195,7 +195,7 @@ Feature parity with Scientist is _not_ a goal.
 - Microsoft and all contributors for TypeScript
 - The Deno authors and community
 - Titian Cernicova-Dragomir for a key [Stack Overflow answer](https://stackoverflow.com/a/60469374/161457) on types
-- The rest of the TypeScript community (particularly the maintainers of [DefinitelyTyped](https://github.com/DefinitelyTyped/DefinitelyTyped))
+- The rest of the TypeScript community
 - All of the creators, contributors, and maintainers of the open source used here
 - Sam Newman for discussing the Parallel Run pattern in the book [Monolith to Microservices](https://samnewman.io/books/monolith-to-microservices/)
 - Future contributors 😺
