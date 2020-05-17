@@ -259,157 +259,146 @@ Deno.test("when both throw it should publish results", () => {
   assertEquals(results.controlTimeMs, undefined);
   assertEquals(results.candidateTimeMs, undefined);
 });
+
+function enabledFalse(_: string): boolean {
+  return false;
+}
+
+Deno.test("when enabled returns false and control does not throw it should not run candidate", () => {
+  const candidateMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "disabled1",
+    control: ctrl,
+    candidate: candidateMock,
+    options: {
+      publish: () => {},
+      enabled: enabledFalse,
+    },
+  });
+
+  experiment("C");
+
+  assertEquals(candidateMock.calls.length, 0);
+});
+
+Deno.test("when enabled returns false and control does not throw it should return result of control", () => {
+  const candidateMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "disabled2",
+    control: ctrl,
+    candidate: candidateMock,
+    options: {
+      publish: () => {},
+      enabled: enabledFalse,
+    },
+  });
+
+  const result: string = experiment("C");
+
+  assertEquals(result, "Ctrl+C");
+});
+
+Deno.test("when enabled returns false and control does not throw it should not publish results", () => {
+  const candidateMock: Spy<void> = spy();
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "disabled3",
+    control: ctrl,
+    candidate: candidateMock,
+    options: {
+      publish: publishMock,
+      enabled: enabledFalse,
+    },
+  });
+
+  experiment("C");
+
+  assertEquals(publishMock.calls.length, 0);
+});
+
+function enabledTrue(_: string): boolean {
+  return true;
+}
+
+Deno.test("when enabled returns true and control does not throw it should run candidate", () => {
+  const candidateMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "enabled1",
+    control: ctrl,
+    candidate: candidateMock,
+    options: {
+      publish: () => {},
+      enabled: enabledTrue,
+    },
+  });
+
+  experiment("C");
+
+  assertEquals(candidateMock.calls.length, 1);
+});
+
+Deno.test("when enabled returns true and control does not throw it should return result of control", () => {
+  const candidateMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "enabled2",
+    control: ctrl,
+    candidate: candidateMock,
+    options: {
+      publish: () => {},
+      enabled: enabledTrue,
+    },
+  });
+
+  const result: string = experiment("C");
+
+  assertEquals(result, "Ctrl+C");
+});
+
+Deno.test("when enabled returns true and control does not throw it should publish results", () => {
+  const candidateMock: Spy<void> = spy();
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "enabled3",
+    control: ctrl,
+    candidate: candidateMock,
+    options: {
+      publish: publishMock,
+      enabled: enabledTrue,
+    },
+  });
+
+  experiment("C");
+
+  assertEquals(publishMock.calls.length, 1);
+});
+
+Deno.test("it should pass experiment params to enabled", () => {
+  const candidateMock: Spy<void> = spy();
+  const enabledMock: Spy<void> = spy(() => false);
+
+  const experiment = scientist.experiment({
+    name: "paramsToEnabled",
+    control: ctrl,
+    candidate: candidateMock,
+    options: {
+      publish: () => {},
+      enabled: enabledMock,
+    },
+  });
+
+  experiment("myparam");
+
+  assertEquals(enabledMock.calls.length, 1);
+  assertEquals(enabledMock.calls[0].args[0], "myparam");
+});
 /*
-
-
   describe('when enabled option is specified', () => {
-    const candidateMock: jest.Mock<string, [string]> = jest.fn<
-      string,
-      [string]
-    >();
-
-    afterEach(() => {
-      candidateMock.mockClear();
-    });
-
-    describe('when control does not throw', () => {
-      function ctrl(s: string): string {
-        return `Ctrl+${s}`;
-      }
-
-      describe('when enabled returns false', () => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        function enabled(_: string): boolean {
-          return false;
-        }
-
-        it('should not run candidate', () => {
-          const experiment = scientist.experiment({
-            name: 'disabled1',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          experiment('C');
-
-          expect(candidateMock.mock.calls.length).toBe(0);
-        });
-
-        it('should return result of control', () => {
-          const experiment = scientist.experiment({
-            name: 'disabled2',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          const result: string = experiment('C');
-
-          expect(result).toBe('Ctrl+C');
-        });
-
-        it('should not publish results', () => {
-          const experiment = scientist.experiment({
-            name: 'disabled3',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          experiment('C');
-
-          expect(publishMock.mock.calls.length).toBe(0);
-        });
-      });
-
-      describe('when enabled returns true', () => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        function enabled(_: string): boolean {
-          return true;
-        }
-
-        it('should run candidate', () => {
-          const experiment = scientist.experiment({
-            name: 'enabled1',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          experiment('C');
-
-          expect(candidateMock.mock.calls.length).toBe(1);
-        });
-
-        it('should return result of control', () => {
-          const experiment = scientist.experiment({
-            name: 'enabled2',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          const result: string = experiment('C');
-
-          expect(result).toBe('Ctrl+C');
-        });
-
-        it('should publish results', () => {
-          const experiment = scientist.experiment({
-            name: 'enabled3',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          experiment('C');
-
-          expect(publishMock.mock.calls.length).toBe(1);
-        });
-      });
-
-      describe('when enabled function specified', () => {
-        it('should pass experiment params to enabled', () => {
-          const enabledMock: jest.Mock<boolean, [string]> = jest
-            .fn<boolean, [string]>()
-            .mockReturnValue(false);
-
-          const experiment = scientist.experiment({
-            name: 'paramsToEnabled',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled: enabledMock
-            }
-          });
-
-          experiment('myparam');
-
-          expect(enabledMock.mock.calls.length).toBe(1);
-          expect(enabledMock.mock.calls[0][0]).toBe('myparam');
-        });
-      });
-    });
 
     describe('when control throws', () => {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
