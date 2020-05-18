@@ -260,7 +260,7 @@ Deno.test("when both throw it should publish results", () => {
   assertEquals(results.candidateTimeMs, undefined);
 });
 
-function enabledFalse(_: string): boolean {
+function enabledFalse(): boolean {
   return false;
 }
 
@@ -319,7 +319,7 @@ Deno.test("when enabled returns false and control does not throw it should not p
   assertEquals(publishMock.calls.length, 0);
 });
 
-function enabledTrue(_: string): boolean {
+function enabledTrue(): boolean {
   return true;
 }
 
@@ -397,78 +397,69 @@ Deno.test("it should pass experiment params to enabled", () => {
   assertEquals(enabledMock.calls.length, 1);
   assertEquals(enabledMock.calls[0].args[0], "myparam");
 });
-/*
-  describe('when enabled option is specified', () => {
 
-    describe('when control throws', () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      function ctrl(_: string): string {
-        throw new Error('Kaos!');
-      }
+Deno.test("when enabled returns false and control throws it should throw", () => {
+  const candidateMock: Spy<void> = spy();
 
-      describe('when enabled returns false', () => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        function enabled(_: string): boolean {
-          return false;
-        }
-
-        it('should throw', () => {
-          const experiment = scientist.experiment({
-            name: 'disabledthrow1',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          expect(() => experiment('C')).toThrowError('Kaos!');
-        });
-
-        it('should not run candidate', () => {
-          const experiment = scientist.experiment({
-            name: 'disabledthrow2',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          try {
-            experiment('C');
-          } catch {
-            // swallow error
-          }
-
-          expect(candidateMock.mock.calls.length).toBe(0);
-        });
-
-        it('should not publish results', () => {
-          const experiment = scientist.experiment({
-            name: 'disabledthrow3',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          try {
-            experiment('C');
-          } catch {
-            // swallow error
-          }
-
-          expect(publishMock.mock.calls.length).toBe(0);
-        });
-      });
-    });
+  const experiment = scientist.experiment({
+    name: "disabledthrow1",
+    control: ctrlThrower,
+    candidate: candidateMock,
+    options: {
+      publish: () => {},
+      enabled: enabledFalse,
+    },
   });
 
+  assertThrows(() => experiment(), Error, "Kaos!");
+});
+
+Deno.test("when enabled returns false and control throws it should not run candidate", () => {
+  const candidateMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "disabledthrow2",
+    control: ctrlThrower,
+    candidate: candidateMock,
+    options: {
+      publish: () => {},
+      enabled: enabledFalse,
+    },
+  });
+
+  try {
+    experiment();
+  } catch {
+    // swallow error
+  }
+
+  assertEquals(candidateMock.calls.length, 0);
+});
+
+Deno.test("when enabled returns false and control throws it should not publish results", () => {
+  const candidateMock: Spy<void> = spy();
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experiment({
+    name: "disabledthrow3",
+    control: ctrlThrower,
+    candidate: candidateMock,
+    options: {
+      publish: publishMock,
+      enabled: enabledFalse,
+    },
+  });
+
+  try {
+    experiment();
+  } catch {
+    // swallow error
+  }
+
+  assertEquals(publishMock.calls.length, 0);
+});
+
+/*
   describe('when default options are used', () => {
     function ctrl(): number {
       return 1;
