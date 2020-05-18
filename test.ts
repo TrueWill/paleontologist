@@ -7,6 +7,10 @@ import {
   spy,
   Spy,
 } from "https://raw.githubusercontent.com/udibo/mock/v0.3.0/spy.ts";
+import {
+  stub,
+  Stub,
+} from "https://raw.githubusercontent.com/udibo/mock/v0.3.0/stub.ts";
 import * as scientist from "./mod.ts";
 
 function sum(a: number, b: number): number {
@@ -459,43 +463,39 @@ Deno.test("when enabled returns false and control throws it should not publish r
   assertEquals(publishMock.calls.length, 0);
 });
 
+function ctrlNumber(): number {
+  return 1;
+}
+
+function candiNumber(): number {
+  return 2;
+}
+
+Deno.test("when default options are used and no options are specified it should use sensible defaults", () => {
+  const consoleStub: Stub<Console> = stub(console, "warn", () => {});
+
+  try {
+    const experiment = scientist.experiment({
+      name: "no1",
+      control: ctrlNumber,
+      candidate: candiNumber,
+    });
+
+    experiment();
+
+    assertEquals(consoleStub.calls.length, 1);
+    assertEquals(
+      consoleStub.calls[0].args[0],
+      "Experiment no1: difference found",
+    );
+  } finally {
+    consoleStub.restore();
+  }
+});
+
 /*
   describe('when default options are used', () => {
-    function ctrl(): number {
-      return 1;
-    }
 
-    function candi(): number {
-      return 2;
-    }
-
-    let consoleSpy: jest.SpyInstance;
-
-    beforeEach(() => {
-      // eslint-disable-next-line @typescript-eslint/no-empty-function
-      consoleSpy = jest.spyOn(console, 'warn').mockImplementation(() => {});
-    });
-
-    afterEach(() => {
-      jest.restoreAllMocks();
-    });
-
-    describe('when no options are specified', () => {
-      it('should use sensible defaults', () => {
-        const experiment = scientist.experiment({
-          name: 'no1',
-          control: ctrl,
-          candidate: candi
-        });
-
-        experiment();
-
-        expect(consoleSpy.mock.calls.length).toBe(1);
-        expect(consoleSpy.mock.calls[0][0]).toBe(
-          'Experiment no1: difference found'
-        );
-      });
-    });
 
     describe('when only publish option is specified', () => {
       it('should enable experiment', () => {
