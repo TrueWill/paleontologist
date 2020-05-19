@@ -194,4 +194,5 @@ Feature parity with Scientist is _not_ a goal.
 - The rest of the TypeScript community
 - All of the creators, contributors, and maintainers of the open source used here
 - Sam Newman for discussing the Parallel Run pattern in the book [Monolith to Microservices](https://samnewman.io/books/monolith-to-microservices/)
+- Livio Brunner for the article [Create your first module with Deno](https://dev.to/brunnerlivio/create-your-first-module-with-deno-575k)
 - Future contributors 😺
