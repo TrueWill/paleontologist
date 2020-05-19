@@ -7,10 +7,6 @@ import {
   spy,
   Spy,
 } from "https://raw.githubusercontent.com/udibo/mock/v0.3.0/spy.ts";
-import {
-  stub,
-  Stub,
-} from "https://raw.githubusercontent.com/udibo/mock/v0.3.0/stub.ts";
 import * as scientist from "./mod.ts";
 
 const sleep = (ms: number): Promise<void> =>
