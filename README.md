@@ -11,7 +11,7 @@ This is a port of [Tzientist](https://github.com/TrueWill/tzientist).
 ## Getting started
 
 ```TypeScript
-import * as scientist from "https://raw.githubusercontent.com/TrueWill/paleontologist/master/mod.ts";
+import * as scientist from "https://raw.githubusercontent.com/TrueWill/paleontologist/v1.0.0/mod.ts";
 
 const experiment = scientist.experiment({
   name: "trial1",
