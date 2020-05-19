@@ -202,102 +202,91 @@ Deno.test("when async control rejects it should reject", async () => {
   );
 });
 
+Deno.test("when async control rejects it should publish results", async () => {
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experimentAsync({
+    name: "async cthrow2",
+    control: ctrlThrower,
+    candidate: candiSimple,
+    options: {
+      publish: publishMock,
+    },
+  });
+
+  try {
+    await experiment();
+  } catch {
+    // swallow error
+  }
+
+  assertEquals(publishMock.calls.length, 1);
+  const results = publishMock.calls[0].args[0];
+  assertEquals(results.experimentName, "async cthrow2");
+  assertEquals(results.experimentArguments, []);
+  assertEquals(results.controlResult, undefined);
+  assertEquals(results.candidateResult, "Kane");
+  assert(results.controlError !== undefined);
+  assertEquals(results.controlError.message, "Kaos!");
+  assertEquals(results.candidateError, undefined);
+  assertEquals(results.controlTimeMs, undefined);
+  assert(results.candidateTimeMs !== undefined);
+  assert(results.candidateTimeMs > 0);
+});
+
+Deno.test("when async both reject it should reject with control error", async () => {
+  const experiment = scientist.experimentAsync({
+    name: "async bothrow1",
+    control: ctrlThrower,
+    candidate: candiReject,
+    options: {
+      publish: () => {},
+    },
+  });
+
+  await assertThrowsAsync(
+    async (): Promise<void> => {
+      await experiment();
+    },
+    Error,
+    "Kaos!",
+  );
+});
+
+Deno.test("when async both reject it should publish results", async () => {
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experimentAsync({
+    name: "async bothrow2",
+    control: ctrlThrower,
+    candidate: candiReject,
+    options: {
+      publish: publishMock,
+    },
+  });
+
+  try {
+    await experiment();
+  } catch {
+    // swallow error
+  }
+
+  assertEquals(publishMock.calls.length, 1);
+  const results = publishMock.calls[0].args[0];
+  assertEquals(results.experimentName, "async bothrow2");
+  assertEquals(results.experimentArguments, []);
+  assertEquals(results.controlResult, undefined);
+  assertEquals(results.candidateResult, undefined);
+  assert(results.controlError !== undefined);
+  assertEquals(results.controlError.message, "Kaos!");
+  assert(results.candidateError !== undefined);
+  assertEquals(results.candidateError.message, "Candy I can't let you go");
+  assertEquals(results.controlTimeMs, undefined);
+  assertEquals(results.candidateTimeMs, undefined);
+});
+
 /*
 describe('experimentAsync', () => {
-  describe('when control rejects', () => {
-    it('should publish results', async () => {
-      const experiment = scientist.experimentAsync({
-        name: 'async cthrow2',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      try {
-        await experiment();
-      } catch {
-        // swallow error
-      }
-
-      expect(publishMock.mock.calls.length).toBe(1);
-      const results = publishMock.mock.calls[0][0];
-      expect(results.experimentName).toBe('async cthrow2');
-      expect(results.experimentArguments).toEqual([]);
-      expect(results.controlResult).toBeUndefined();
-      expect(results.candidateResult).toBe('Kane');
-      expect(results.controlError).toBeDefined();
-      expect(results.controlError.message).toBe('Kaos!');
-      expect(results.candidateError).toBeUndefined();
-      expect(results.controlTimeMs).toBeUndefined();
-      expect(results.candidateTimeMs).toBeDefined();
-      expect(results.candidateTimeMs).toBeGreaterThan(0);
-    });
-  });
-
-  describe('when both reject', () => {
-    const publishMock: jest.Mock<
-      void,
-      [scientist.Results<[], string>]
-    > = jest.fn<void, [scientist.Results<[], string>]>();
-
-    afterEach(() => {
-      publishMock.mockClear();
-    });
-
-    async function ctrl(): Promise<string> {
-      throw new Error('Kaos!');
-    }
-
-    async function candi(): Promise<string> {
-      return Promise.reject(new Error("Candy I can't let you go"));
-    }
-
-    it('should reject with control error', () => {
-      const experiment = scientist.experimentAsync({
-        name: 'async bothrow1',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      return expect(experiment()).rejects.toMatchObject({ message: 'Kaos!' });
-    });
-
-    it('should publish results', async () => {
-      const experiment = scientist.experimentAsync({
-        name: 'async bothrow2',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      try {
-        await experiment();
-      } catch {
-        // swallow error
-      }
-
-      expect(publishMock.mock.calls.length).toBe(1);
-      const results = publishMock.mock.calls[0][0];
-      expect(results.experimentName).toBe('async bothrow2');
-      expect(results.experimentArguments).toEqual([]);
-      expect(results.controlResult).toBeUndefined();
-      expect(results.candidateResult).toBeUndefined();
-      expect(results.controlError).toBeDefined();
-      expect(results.controlError.message).toBe('Kaos!');
-      expect(results.candidateError).toBeDefined();
-      expect(results.candidateError.message).toBe("Candy I can't let you go");
-      expect(results.controlTimeMs).toBeUndefined();
-      expect(results.candidateTimeMs).toBeUndefined();
-    });
-  });
-
   describe('when enabled option is specified', () => {
     const publishMock: jest.Mock<
       void,
