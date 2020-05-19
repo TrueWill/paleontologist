@@ -41,159 +41,141 @@ Deno.test("when async functions are equivalent it should await result", async ()
   assertEquals(result, 3);
 });
 
+Deno.test("when async functions are equivalent it should publish results", async () => {
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experimentAsync({
+    name: "async equivalent2",
+    control: sum,
+    candidate: sum2,
+    options: {
+      publish: publishMock,
+    },
+  });
+
+  await experiment(1, 2);
+
+  assertEquals(publishMock.calls.length, 1);
+  const results = publishMock.calls[0].args[0];
+  assertEquals(results.experimentName, "async equivalent2");
+  assertEquals(results.experimentArguments, [1, 2]);
+  assertEquals(results.controlResult, 3);
+  assertEquals(results.candidateResult, 3);
+  assertEquals(results.controlError, undefined);
+  assertEquals(results.candidateError, undefined);
+  assert(results.controlTimeMs !== undefined);
+  assert(results.controlTimeMs > 0);
+  assert(results.candidateTimeMs !== undefined);
+  assert(results.candidateTimeMs > 0);
+});
+
+async function ctrl(s: string): Promise<string> {
+  await sleep(250);
+  return `Ctrl+${s}`;
+}
+
+async function candi(s: string): Promise<string> {
+  await sleep(125);
+  return s;
+}
+
+Deno.test("when async function results differ it should await result of control", async () => {
+  const experiment = scientist.experimentAsync({
+    name: "async differ1",
+    control: ctrl,
+    candidate: candi,
+    options: {
+      publish: () => {},
+    },
+  });
+
+  const result: string = await experiment("C");
+
+  assertEquals(result, "Ctrl+C");
+});
+
+Deno.test("when async function results differ it should publish results", async () => {
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experimentAsync({
+    name: "async differ2",
+    control: ctrl,
+    candidate: candi,
+    options: {
+      publish: publishMock,
+    },
+  });
+
+  await experiment("C");
+
+  assertEquals(publishMock.calls.length, 1);
+  const results = publishMock.calls[0].args[0];
+  assertEquals(results.experimentName, "async differ2");
+  assertEquals(results.experimentArguments, ["C"]);
+  assertEquals(results.controlResult, "Ctrl+C");
+  assertEquals(results.candidateResult, "C");
+  assertEquals(results.controlError, undefined);
+  assertEquals(results.candidateError, undefined);
+  assert(results.controlTimeMs !== undefined);
+  assert(results.controlTimeMs > 0);
+  assert(results.candidateTimeMs !== undefined);
+  assert(results.candidateTimeMs > 0);
+});
+
+async function ctrlSimple(): Promise<string> {
+  await sleep(125);
+  return "Everything is under control";
+}
+
+async function candiReject(): Promise<string> {
+  return Promise.reject(new Error("Candy I can't let you go"));
+}
+
+Deno.test("when async candidate rejects it should await result of control", async () => {
+  const experiment = scientist.experimentAsync({
+    name: "async throw1",
+    control: ctrlSimple,
+    candidate: candiReject,
+    options: {
+      publish: () => {},
+    },
+  });
+
+  const result: string = await experiment();
+
+  assertEquals(result, "Everything is under control");
+});
+
+Deno.test("when async candidate rejects it should publish results", async () => {
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experimentAsync({
+    name: "async throw2",
+    control: ctrlSimple,
+    candidate: candiReject,
+    options: {
+      publish: publishMock,
+    },
+  });
+
+  await experiment();
+
+  assertEquals(publishMock.calls.length, 1);
+  const results = publishMock.calls[0].args[0];
+  assertEquals(results.experimentName, "async throw2");
+  assertEquals(results.experimentArguments, []);
+  assertEquals(results.controlResult, "Everything is under control");
+  assertEquals(results.candidateResult, undefined);
+  assertEquals(results.controlError, undefined);
+  assert(results.candidateError !== undefined);
+  assertEquals(results.candidateError.message, "Candy I can't let you go");
+  assert(results.controlTimeMs !== undefined);
+  assert(results.controlTimeMs > 0);
+  assertEquals(results.candidateTimeMs, undefined);
+});
+
 /*
 describe('experimentAsync', () => {
-  describe('when functions are equivalent', () => {
-    it('should publish results', async () => {
-      const experiment = scientist.experimentAsync({
-        name: 'async equivalent2',
-        control: sum,
-        candidate: sum2,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      await experiment(1, 2);
-
-      expect(publishMock.mock.calls.length).toBe(1);
-      const results = publishMock.mock.calls[0][0];
-      expect(results.experimentName).toBe('async equivalent2');
-      expect(results.experimentArguments).toEqual([1, 2]);
-      expect(results.controlResult).toBe(3);
-      expect(results.candidateResult).toBe(3);
-      expect(results.controlError).toBeUndefined();
-      expect(results.candidateError).toBeUndefined();
-      expect(results.controlTimeMs).toBeDefined();
-      expect(results.controlTimeMs).toBeGreaterThan(0);
-      expect(results.candidateTimeMs).toBeDefined();
-      expect(results.candidateTimeMs).toBeGreaterThan(0);
-    });
-  });
-
-  describe('when function results differ', () => {
-    const publishMock: jest.Mock<
-      void,
-      [scientist.Results<[string], string>]
-    > = jest.fn<void, [scientist.Results<[string], string>]>();
-
-    afterEach(() => {
-      publishMock.mockClear();
-    });
-
-    async function ctrl(s: string): Promise<string> {
-      await sleep(250);
-      return `Ctrl+${s}`;
-    }
-
-    async function candi(s: string): Promise<string> {
-      await sleep(125);
-      return s;
-    }
-
-    it('should await result of control', async () => {
-      const experiment = scientist.experimentAsync({
-        name: 'async differ1',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      const result: string = await experiment('C');
-
-      expect(result).toBe('Ctrl+C');
-    });
-
-    it('should publish results', async () => {
-      const experiment = scientist.experimentAsync({
-        name: 'async differ2',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      await experiment('C');
-
-      expect(publishMock.mock.calls.length).toBe(1);
-      const results = publishMock.mock.calls[0][0];
-      expect(results.experimentName).toBe('async differ2');
-      expect(results.experimentArguments).toEqual(['C']);
-      expect(results.controlResult).toBe('Ctrl+C');
-      expect(results.candidateResult).toBe('C');
-      expect(results.controlError).toBeUndefined();
-      expect(results.candidateError).toBeUndefined();
-      expect(results.controlTimeMs).toBeDefined();
-      expect(results.controlTimeMs).toBeGreaterThan(0);
-      expect(results.candidateTimeMs).toBeDefined();
-      expect(results.candidateTimeMs).toBeGreaterThan(0);
-    });
-  });
-
-  describe('when candidate rejects', () => {
-    const publishMock: jest.Mock<
-      void,
-      [scientist.Results<[], string>]
-    > = jest.fn<void, [scientist.Results<[], string>]>();
-
-    afterEach(() => {
-      publishMock.mockClear();
-    });
-
-    async function ctrl(): Promise<string> {
-      await sleep(125);
-      return 'Everything is under control';
-    }
-
-    async function candi(): Promise<string> {
-      return Promise.reject(new Error("Candy I can't let you go"));
-    }
-
-    it('should await result of control', async () => {
-      const experiment = scientist.experimentAsync({
-        name: 'async throw1',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      const result: string = await experiment();
-
-      expect(result).toBe('Everything is under control');
-    });
-
-    it('should publish results', async () => {
-      const experiment = scientist.experimentAsync({
-        name: 'async throw2',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      await experiment();
-
-      expect(publishMock.mock.calls.length).toBe(1);
-      const results = publishMock.mock.calls[0][0];
-      expect(results.experimentName).toBe('async throw2');
-      expect(results.experimentArguments).toEqual([]);
-      expect(results.controlResult).toBe('Everything is under control');
-      expect(results.candidateResult).toBeUndefined();
-      expect(results.controlError).toBeUndefined();
-      expect(results.candidateError).toBeDefined();
-      expect(results.candidateError.message).toBe("Candy I can't let you go");
-      expect(results.controlTimeMs).toBeDefined();
-      expect(results.controlTimeMs).toBeGreaterThan(0);
-      expect(results.candidateTimeMs).toBeUndefined();
-    });
-  });
-
   describe('when control rejects', () => {
     const publishMock: jest.Mock<
       void,
