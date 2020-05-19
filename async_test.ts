@@ -1,7 +1,7 @@
 import {
   assert,
   assertEquals,
-  assertThrows,
+  assertThrowsAsync,
 } from "https://deno.land/std/testing/asserts.ts";
 import {
   spy,
@@ -174,40 +174,37 @@ Deno.test("when async candidate rejects it should publish results", async () => 
   assertEquals(results.candidateTimeMs, undefined);
 });
 
+async function ctrlThrower(): Promise<string> {
+  throw new Error("Kaos!");
+}
+
+async function candiSimple(): Promise<string> {
+  await sleep(125);
+  return "Kane";
+}
+
+Deno.test("when async control rejects it should reject", async () => {
+  const experiment = scientist.experimentAsync({
+    name: "async cthrow1",
+    control: ctrlThrower,
+    candidate: candiSimple,
+    options: {
+      publish: () => {},
+    },
+  });
+
+  await assertThrowsAsync(
+    async (): Promise<void> => {
+      await experiment();
+    },
+    Error,
+    "Kaos!",
+  );
+});
+
 /*
 describe('experimentAsync', () => {
   describe('when control rejects', () => {
-    const publishMock: jest.Mock<
-      void,
-      [scientist.Results<[], string>]
-    > = jest.fn<void, [scientist.Results<[], string>]>();
-
-    afterEach(() => {
-      publishMock.mockClear();
-    });
-
-    async function ctrl(): Promise<string> {
-      throw new Error('Kaos!');
-    }
-
-    async function candi(): Promise<string> {
-      await sleep(125);
-      return 'Kane';
-    }
-
-    it('should reject', () => {
-      const experiment = scientist.experimentAsync({
-        name: 'async cthrow1',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      return expect(experiment()).rejects.toMatchObject({ message: 'Kaos!' });
-    });
-
     it('should publish results', async () => {
       const experiment = scientist.experimentAsync({
         name: 'async cthrow2',
