@@ -285,85 +285,69 @@ Deno.test("when async both reject it should publish results", async () => {
   assertEquals(results.candidateTimeMs, undefined);
 });
 
+function enabledFalse(): boolean {
+  return false;
+}
+
+Deno.test("when async and enabled returns false and control resolves it should not run candidate", async () => {
+  const candidateMock: Spy<void> = spy();
+
+  const experiment = scientist.experimentAsync({
+    name: "async disabled1",
+    control: ctrl,
+    candidate: candidateMock,
+    options: {
+      publish: () => {},
+      enabled: enabledFalse,
+    },
+  });
+
+  await experiment("C");
+
+  assertEquals(candidateMock.calls.length, 0);
+});
+
+Deno.test("when async and enabled returns false and control resolves it should await result of control", async () => {
+  const candidateMock: Spy<void> = spy();
+
+  const experiment = scientist.experimentAsync({
+    name: "async disabled2",
+    control: ctrl,
+    candidate: candidateMock,
+    options: {
+      publish: () => {},
+      enabled: enabledFalse,
+    },
+  });
+
+  const result: string = await experiment("C");
+
+  assertEquals(result, "Ctrl+C");
+});
+
+Deno.test("when async and enabled returns false and control resolves it should not publish results", async () => {
+  const candidateMock: Spy<void> = spy();
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experimentAsync({
+    name: "async disabled3",
+    control: ctrl,
+    candidate: candidateMock,
+    options: {
+      publish: publishMock,
+      enabled: enabledFalse,
+    },
+  });
+
+  await experiment("C");
+
+  assertEquals(publishMock.calls.length, 0);
+});
+
 /*
 describe('experimentAsync', () => {
   describe('when enabled option is specified', () => {
-    const publishMock: jest.Mock<
-      void,
-      [scientist.Results<[string], string>]
-    > = jest.fn<void, [scientist.Results<[string], string>]>();
-
-    const candidateMock: jest.Mock<Promise<string>, [string]> = jest.fn<
-      Promise<string>,
-      [string]
-    >();
-
-    afterEach(() => {
-      publishMock.mockClear();
-      candidateMock.mockClear();
-    });
-
     describe('when enabled returns false', () => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      function enabled(_: string): boolean {
-        return false;
-      }
-
-      describe('when control resolves', () => {
-        async function ctrl(s: string): Promise<string> {
-          await sleep(125);
-          return `Ctrl+${s}`;
-        }
-
-        it('should not run candidate', async () => {
-          const experiment = scientist.experimentAsync({
-            name: 'async disabled1',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          await experiment('C');
-
-          expect(candidateMock.mock.calls.length).toBe(0);
-        });
-
-        it('should await result of control', async () => {
-          const experiment = scientist.experimentAsync({
-            name: 'async disabled2',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          const result: string = await experiment('C');
-
-          expect(result).toBe('Ctrl+C');
-        });
-
-        it('should not publish results', async () => {
-          const experiment = scientist.experimentAsync({
-            name: 'async disabled3',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          await experiment('C');
-
-          expect(publishMock.mock.calls.length).toBe(0);
-        });
-      });
-
       describe('when control rejects', () => {
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
         async function ctrl(_: string): Promise<string> {
