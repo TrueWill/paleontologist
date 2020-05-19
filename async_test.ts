@@ -344,75 +344,75 @@ Deno.test("when async and enabled returns false and control resolves it should n
   assertEquals(publishMock.calls.length, 0);
 });
 
-/*
-describe('experimentAsync', () => {
-  describe('when enabled option is specified', () => {
-    describe('when enabled returns false', () => {
-      describe('when control rejects', () => {
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        async function ctrl(_: string): Promise<string> {
-          throw new Error('Kaos!');
-        }
+Deno.test("when async and enabled returns false and control rejects it should reject", async () => {
+  const candidateMock: Spy<void> = spy();
 
-        it('should reject', () => {
-          const experiment = scientist.experimentAsync({
-            name: 'async cthrow1',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          return expect(experiment('C')).rejects.toMatchObject({
-            message: 'Kaos!'
-          });
-        });
-
-        it('should not run candidate', async () => {
-          const experiment = scientist.experimentAsync({
-            name: 'async disabledthrow2',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          try {
-            await experiment('C');
-          } catch {
-            // swallow error
-          }
-
-          expect(candidateMock.mock.calls.length).toBe(0);
-        });
-
-        it('should not publish results', async () => {
-          const experiment = scientist.experimentAsync({
-            name: 'async disabledthrow3',
-            control: ctrl,
-            candidate: candidateMock,
-            options: {
-              publish: publishMock,
-              enabled
-            }
-          });
-
-          try {
-            await experiment('C');
-          } catch {
-            // swallow error
-          }
-
-          expect(publishMock.mock.calls.length).toBe(0);
-        });
-      });
-    });
+  const experiment = scientist.experimentAsync({
+    name: "async cthrow1",
+    control: ctrlThrower,
+    candidate: candidateMock,
+    options: {
+      publish: () => {},
+      enabled: enabledFalse,
+    },
   });
 
+  await assertThrowsAsync(
+    async (): Promise<void> => {
+      await experiment();
+    },
+    Error,
+    "Kaos!",
+  );
+});
+
+Deno.test("when async and enabled returns false and control rejects it should not run candidate", async () => {
+  const candidateMock: Spy<void> = spy();
+
+  const experiment = scientist.experimentAsync({
+    name: "async disabledthrow2",
+    control: ctrlThrower,
+    candidate: candidateMock,
+    options: {
+      publish: () => {},
+      enabled: enabledFalse,
+    },
+  });
+
+  try {
+    await experiment();
+  } catch {
+    // swallow error
+  }
+
+  assertEquals(candidateMock.calls.length, 0);
+});
+
+Deno.test("when async and enabled returns false and control rejects it should not publish results", async () => {
+  const candidateMock: Spy<void> = spy();
+  const publishMock: Spy<void> = spy();
+
+  const experiment = scientist.experimentAsync({
+    name: "async disabledthrow3",
+    control: ctrlThrower,
+    candidate: candidateMock,
+    options: {
+      publish: publishMock,
+      enabled: enabledFalse,
+    },
+  });
+
+  try {
+    await experiment();
+  } catch {
+    // swallow error
+  }
+
+  assertEquals(publishMock.calls.length, 0);
+});
+
+/*
+describe('experimentAsync', () => {
   describe('when functions are slow', () => {
     const publishMock: jest.Mock<
       void,
