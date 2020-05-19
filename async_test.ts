@@ -411,76 +411,62 @@ Deno.test("when async and enabled returns false and control rejects it should no
   assertEquals(publishMock.calls.length, 0);
 });
 
-/*
-describe('experimentAsync', () => {
-  describe('when functions are slow', () => {
-    const publishMock: jest.Mock<
-      void,
-      [scientist.Results<[], string>]
-    > = jest.fn<void, [scientist.Results<[], string>]>();
+const msPerFunction = 1000;
 
-    afterEach(() => {
-      publishMock.mockClear();
-    });
+async function ctrlSlow(): Promise<string> {
+  await sleep(msPerFunction);
+  return "Control";
+}
 
-    const msPerFunction = 1000;
+async function candiSlow(): Promise<string> {
+  await sleep(msPerFunction);
+  return "Candidate";
+}
 
-    async function ctrl(): Promise<string> {
-      await sleep(msPerFunction);
-      return 'Control';
-    }
+Deno.test("when async functions are slow it should run functions in parallel", async () => {
+  const allowedOverhead = 125;
 
-    async function candi(): Promise<string> {
-      await sleep(msPerFunction);
-      return 'Candidate';
-    }
-
-    it('should run functions in parallel', async () => {
-      const nsPerMs = 1000000;
-      const allowedOverhead = 125;
-
-      const experiment = scientist.experimentAsync({
-        name: 'async parallel1',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      const start = process.hrtime.bigint();
-      await experiment();
-      const end = process.hrtime.bigint();
-
-      const elapsedMs = Number((end - start) / BigInt(nsPerMs));
-
-      expect(elapsedMs).toBeLessThan(msPerFunction + allowedOverhead);
-    });
-
-    it('should publish individual timings', async () => {
-      const allowedVarianceMs = 125;
-      const minMs = msPerFunction - allowedVarianceMs;
-      const maxMs = msPerFunction + allowedVarianceMs;
-      const experiment = scientist.experimentAsync({
-        name: 'async parallel2',
-        control: ctrl,
-        candidate: candi,
-        options: {
-          publish: publishMock
-        }
-      });
-
-      await experiment();
-
-      expect(publishMock.mock.calls.length).toBe(1);
-      const results = publishMock.mock.calls[0][0];
-      expect(results.controlTimeMs).toBeDefined();
-      expect(results.controlTimeMs).toBeGreaterThan(minMs);
-      expect(results.controlTimeMs).toBeLessThan(maxMs);
-      expect(results.candidateTimeMs).toBeDefined();
-      expect(results.candidateTimeMs).toBeGreaterThan(minMs);
-      expect(results.candidateTimeMs).toBeLessThan(maxMs);
-    });
+  const experiment = scientist.experimentAsync({
+    name: "async parallel1",
+    control: ctrlSlow,
+    candidate: candiSlow,
+    options: {
+      publish: () => {},
+    },
   });
+
+  const start = performance.now();
+  await experiment();
+  const end = performance.now();
+
+  const elapsedMs = end - start;
+
+  assert(elapsedMs < msPerFunction + allowedOverhead);
 });
-*/
+
+Deno.test("when async functions are slow it should publish individual timings", async () => {
+  const publishMock: Spy<void> = spy();
+  const allowedVarianceMs = 125;
+  const minMs = msPerFunction - allowedVarianceMs;
+  const maxMs = msPerFunction + allowedVarianceMs;
+
+  const experiment = scientist.experimentAsync({
+    name: "async parallel2",
+    control: ctrlSlow,
+    candidate: candiSlow,
+    options: {
+      publish: publishMock,
+    },
+  });
+
+  await experiment();
+
+  assertEquals(publishMock.calls.length, 1);
+  const results = publishMock.calls[0].args[0];
+  assert(results.controlTimeMs !== undefined);
+  assert(results.controlTimeMs > minMs);
+  assert(results.controlTimeMs < maxMs);
+  assert(results.candidateTimeMs !== undefined);
+  assert(results.candidateTimeMs > minMs);
+  assert(results.candidateTimeMs < maxMs);
+});
