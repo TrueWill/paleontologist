@@ -493,70 +493,74 @@ Deno.test("when default options are used and no options are specified it should 
   }
 });
 
-/*
-  describe('when default options are used', () => {
+Deno.test("when default options are used and only publish option is specified it should enable experiment", () => {
+  const publishMock: Spy<void> = spy();
 
-
-    describe('when only publish option is specified', () => {
-      it('should enable experiment', () => {
-        const experiment = scientist.experiment({
-          name: 'opt1',
-          control: ctrl,
-          candidate: candi,
-          options: {
-            publish: publishMock
-          }
-        });
-
-        experiment();
-
-        expect(publishMock.mock.calls.length).toBe(1);
-        const results = publishMock.mock.calls[0][0];
-        expect(results.controlResult).toBe(1);
-        expect(results.candidateResult).toBe(2);
-      });
-    });
-
-    describe('when only enabled option is specified', () => {
-      it('should use default publish', () => {
-        const experiment = scientist.experiment({
-          name: 'opt2',
-          control: ctrl,
-          candidate: candi,
-          options: {
-            enabled: (): boolean => true
-          }
-        });
-
-        experiment();
-
-        expect(consoleSpy.mock.calls.length).toBe(1);
-        expect(consoleSpy.mock.calls[0][0]).toBe(
-          'Experiment opt2: difference found'
-        );
-      });
-
-      it('should respect enabled', () => {
-        const candidateMock: jest.Mock<number, []> = jest.fn<number, []>();
-
-        const experiment = scientist.experiment({
-          name: 'opt3',
-          control: ctrl,
-          candidate: candidateMock,
-          options: {
-            enabled: (): boolean => false
-          }
-        });
-
-        experiment();
-
-        expect(consoleSpy.mock.calls.length).toBe(0);
-        expect(candidateMock.mock.calls.length).toBe(0);
-      });
-    });
+  const experiment = scientist.experiment({
+    name: "opt1",
+    control: ctrlNumber,
+    candidate: candiNumber,
+    options: {
+      publish: publishMock,
+    },
   });
+
+  experiment();
+
+  assertEquals(publishMock.calls.length, 1);
+  const results = publishMock.calls[0].args[0];
+  assertEquals(results.controlResult, 1);
+  assertEquals(results.candidateResult, 2);
 });
 
+Deno.test("when default options are used and only enabled option is specified it should use default publish", () => {
+  const consoleStub: Stub<Console> = stub(console, "warn", () => {});
+
+  try {
+    const experiment = scientist.experiment({
+      name: "opt2",
+      control: ctrlNumber,
+      candidate: candiNumber,
+      options: {
+        enabled: (): boolean => true,
+      },
+    });
+
+    experiment();
+
+    assertEquals(consoleStub.calls.length, 1);
+    assertEquals(
+      consoleStub.calls[0].args[0],
+      "Experiment opt2: difference found",
+    );
+  } finally {
+    consoleStub.restore();
+  }
+});
+
+Deno.test("when default options are used and only enabled option is specified it should respect enabled", () => {
+  const candidateMock: Spy<void> = spy();
+  const consoleStub: Stub<Console> = stub(console, "warn", () => {});
+
+  try {
+    const experiment = scientist.experiment({
+      name: "opt3",
+      control: ctrlNumber,
+      candidate: candidateMock,
+      options: {
+        enabled: (): boolean => false,
+      },
+    });
+
+    experiment();
+
+    assertEquals(consoleStub.calls.length, 0);
+    assertEquals(candidateMock.calls.length, 0);
+  } finally {
+    consoleStub.restore();
+  }
+});
+/*
 describe('experimentAsync', () => {
   const sleep = (ms: number): Promise<void> =>
     new Promise((resolve) => setTimeout(resolve, ms));
