@@ -190,6 +190,7 @@ Feature parity with Scientist is _not_ a goal.
 - GitHub and all contributors for [Scientist](https://github.com/github/scientist)
 - Microsoft and all contributors for TypeScript
 - The Deno authors and community
+- Kyle June for [Mock](https://github.com/udibo/mock)
 - Titian Cernicova-Dragomir for a key [Stack Overflow answer](https://stackoverflow.com/a/60469374/161457) on types
 - The rest of the TypeScript community
 - All of the creators, contributors, and maintainers of the open source used here
