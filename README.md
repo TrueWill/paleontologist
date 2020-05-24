@@ -157,6 +157,12 @@ Q. Why doesn't Paleontologist randomize the order in which the control and the c
 
 A. Because those functions should not have side effects.
 
+---
+
+Q. What if the results always differ due to the data containing timestamps, GUIDs, etc.?
+
+A. One technique is to match those with regular expressions and replace them with a placeholder before comparing.
+
 ## Why
 
 GitHub's [Scientist](https://github.com/github/scientist) Ruby library is a brilliant concept.
