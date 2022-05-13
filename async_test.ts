@@ -6,7 +6,7 @@ import {
 import {
   spy,
   Spy,
-} from "https://raw.githubusercontent.com/udibo/mock/v0.3.0/spy.ts";
+} from "https://deno.land/x/mock@0.15.2/mod.ts";
 import * as scientist from "./mod.ts";
 
 const sleep = (ms: number): Promise<void> =>

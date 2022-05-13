@@ -6,11 +6,11 @@ import {
 import {
   spy,
   Spy,
-} from "https://raw.githubusercontent.com/udibo/mock/v0.3.0/spy.ts";
+} from "https://deno.land/x/mock@0.15.2/mod.ts";
 import {
   stub,
   Stub,
-} from "https://raw.githubusercontent.com/udibo/mock/v0.3.0/stub.ts";
+} from "https://deno.land/x/mock@0.15.2/mod.ts";
 import * as scientist from "./mod.ts";
 
 function sum(a: number, b: number): number {
